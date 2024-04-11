@@ -13,38 +13,39 @@ source .venv/bin/activate
 ### Unstructured
 
 #### Docker Run
-Following the following commands:
+Following the following commands.
+
+##### Step 1: Building A Docker Image
+
 * Do it for the first time to pull the latest docker image:
 ```bash
 docker pull downloads.unstructured.io/unstructured-io/unstructured:latest
 ```
-* Do it whenever needed a docker container:
+* Build own docker image:
 ```bash
-# root in container: /home/notebook-user
-docker run -dt --name unstructured  -v \
-     ${PWD}/examples/unstructured:/home/notebook-user/src \
-     ${PWD}/output:/home/notebook-user/output \
-     ${PWD}/input:/home/notebook-user/input \
-     downloads.unstructured.io/unstructured-io/unstructured:latest
+cd docker
+source build_docker.sh
 ```
+
+After that, there should be `unstructured` in the repository list by running `docker images`.
+
+##### Step 2: Build A Docker Container
+
+* Build a container by running the following script:
+
+```bash
+source scripts/build_container.sh
+```
+
+Now doing `docker ps` should output a container named: `myunstructured`.
+
+##### Step 3: Document Partioning
+
 * Execute docker:
 ```
-docker exec -it unstructured bash
-```
-followed by:
-```bash
-python3
-```
-and then:
-
-```python
-from unstructured.partition.pdf import partition_pdf
-elements = partition_pdf(filename="example-docs/layout-parser-paper-fast.pdf")
-
-from unstructured.partition.text import partition_text
-elements = partition_text(filename="example-docs/fake-text.txt")
+docker exec -it myunstructured bash -c "python3 src/document_partition.py -i [INPUT] -o [OUTPUT]"
 ```
 
-#### Pip Installation
-The local installation of the algorithms
-can be found here: [Unstructured](https://github.com/Unstructured-IO/unstructured)
+Here, both `[INPUT]` and `[OUTPUT]` are either all directories or all files. In the case
+that they are directories, all the files in the input directory are looped and executed one
+by one. The basename of the file is used as the output file name.

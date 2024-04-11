@@ -11,6 +11,7 @@ import logging
 import argparse
 from time import time
 from datetime import timedelta
+import os
 
 logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -52,6 +53,27 @@ class DocumentPartition:
         with open(outputname, "w") as outfile:
             json.dump(element_dict, outfile, indent=4)
             logger.info(f"Output saved to {outputname}.")
+    
+    def run_dir(self, inputdir, outputdir):
+        """
+        Partitions all the documents in the input directory and saves the resulting elements as JSON files in the output directory.
+
+        Args:
+        - inputdir (str): The directory containing the input documents.
+        - outputdir (str): The directory where the output JSON files will be saved.
+
+        Returns:
+        - None
+        """
+        logger.info(f"Partitioning all documents in the input directory: {inputdir}")
+        doc_idx = 0
+        for filename in os.listdir(inputdir):
+            basename = os.path.basename(filename).split(".")[0]
+            outputname = os.path.join(outputdir, f"{basename}.json")
+            self.run(filename=os.path.join(inputdir, filename), outputname=outputname)
+
+            logger.info(f"Partitioned document {doc_idx}: {filename}\n")
+            doc_idx += 1
 
 def main():
     t_start = time()
@@ -63,7 +85,12 @@ def main():
 
     args = parser.parse_args()
     dp = DocumentPartition()
-    dp.run(args.input, args.output)
+    if os.path.isdir(args.input) and os.path.isdir(args.output):
+        dp.run_dir(args.input, args.output)
+    elif os.path.isfile(args.input) and os.path.isfile(args.output):
+        dp.run(args.input, args.output)
+    else:
+        logger.error("Input and output must be either both directories or both files.")
     tdif = time() - t_start
     logger.info("Time used: %s" % str(timedelta(seconds=tdif)))
 
