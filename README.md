@@ -24,6 +24,7 @@ docker pull downloads.unstructured.io/unstructured-io/unstructured:latest
 docker run -dt --name unstructured  -v \
      ${PWD}/examples/unstructured:/home/notebook-user/src \
      ${PWD}/output:/home/notebook-user/output \
+     ${PWD}/input:/home/notebook-user/input \
      downloads.unstructured.io/unstructured-io/unstructured:latest
 ```
 * Execute docker:

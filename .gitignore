@@ -1,6 +1,7 @@
 /unstructured
 .DS_Store/
 output/
+input/
 
 
 # Byte-compiled / optimized / DLL files
