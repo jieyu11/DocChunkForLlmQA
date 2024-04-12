@@ -2,6 +2,8 @@
 .DS_Store/
 output/
 input/
+/reference
+/models
 
 
 # Byte-compiled / optimized / DLL files
