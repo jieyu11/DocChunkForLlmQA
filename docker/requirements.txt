@@ -6,7 +6,9 @@ langchain-core
 langchain-experimental
 langchain-openai
 langchain-text-splitters
+chromadb
 nltk
 spacy
 numpy
 pandas
+faiss-cpu
