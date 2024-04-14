@@ -41,7 +41,7 @@ Now doing `docker ps` should output a container named: `myunstructured`.
 
 ##### Step 3: Document Partioning
 
-* Execute docker:
+* Execute docker for document partition:
 ```
 docker exec -it myunstructured bash -c "python3 src/document_partition.py -i [INPUT] -o [OUTPUT]"
 ```
@@ -49,3 +49,12 @@ docker exec -it myunstructured bash -c "python3 src/document_partition.py -i [IN
 Here, both `[INPUT]` and `[OUTPUT]` are either all directories or all files. In the case
 that they are directories, all the files in the input directory are looped and executed one
 by one. The basename of the file is used as the output file name.
+
+* Execute docker for document chunking:
+```
+docker exec -it myunstructured bash -c "python3 src/chunking.py -i [INPUT] -o [OUTPUT]"
+```
+
+where, `[INPUT]` and `[OUTPUT]` are filenames.
+
+* Execute docker for document search:

@@ -24,9 +24,13 @@ class VectorStore:
         # self.embeddings = OpenAIEmbeddings()
         self.embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
         # self.retrievers = dict()
-        self.stores = dict()
+        self._stores = dict()
+    
+    @property
+    def stores(self):
+        return self._stores
         
-    def build_retriever(self, filenames: list[str], retriever_key, **retriever_kwargs) -> None:
+    def build_retriever(self, filenames: list[str], retriever_key="default") -> None:
         documents = list()
         for name in filenames:
             documents.extend(self.chunking.langchain_documents(name))
@@ -34,7 +38,7 @@ class VectorStore:
         vectorstore = FAISS.from_documents(documents, self.embeddings)
         logger.info(f"Number of indices in db: {vectorstore.index.ntotal}")
 
-        self.stores[retriever_key] = vectorstore
+        self._stores[retriever_key] = vectorstore
         logger.info(f"Built vectorstore {retriever_key} with {len(documents)} documents")
 
         # retriever = vectorstore.as_retriever(
@@ -43,15 +47,15 @@ class VectorStore:
         # )
         # self.retrievers[retriever_key] = retriever
         # logger.info(f"Built retriever {retriever_key} with {len(documents)} documents")
-    def search(self, query: str, retriever_key) -> list[Document]:
-        assert retriever_key in self.stores, f"Retriever {retriever_key} not found."
-        retriever = self.stores[retriever_key]
-        results = retriever.similarity_search(query, k=5)
+    def search(self, query: str, retriever_key, top_k=3) -> list[Document]:
+        assert retriever_key in self._stores, f"Retriever {retriever_key} not found."
+        retriever = self._stores[retriever_key]
+        results = retriever.similarity_search(query, k=top_k)
         return results
 
     def search_queries(self, queries: list[str], retriever_key) -> list[Document]:
-        assert retriever_key in self.stores, f"Retriever {retriever_key} not found."
-        retriever = self.stores[retriever_key]
+        assert retriever_key in self._stores, f"Retriever {retriever_key} not found."
+        retriever = self._stores[retriever_key]
         results = list()
         for query in queries:
             results.append(retriever.similarity_search(query, k=5))

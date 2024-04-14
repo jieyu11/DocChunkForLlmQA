@@ -29,32 +29,48 @@ class DocumentPartition:
     def __init__(self):
         pass
 
-    def run(self, filename, outputname):
-        """
-        Partitions the document specified by filename and saves the resulting elements as a JSON file with the name outputname.
-
-        Args:
-        - filename (str): The name of the document file to be partitioned.
-        - outputname (str): The name of the output JSON file.
-
-        Returns:
-        - None
-        """
+    @staticmethod
+    def parse_doc(filename):
+        elements = None
         if filename.lower().endswith(".pptx"):
             elements = partition_pptx(filename=filename)
         elif filename.lower().endswith(".html"):
             elements = partition_html(filename=filename)
         elif filename.lower().endswith(".pdf"):
-            elements = partition_pdf(filename=filename)
+            elements = partition_pdf(filename=filename,
+                                     strategy="hi_res",
+                                     infer_table_structure=True,
+                                     hi_res_model_name="yolox")
         else:
             logger.error("File type not supported.")
-            return
+
+        return elements
+        
+    def run(self, filename, outputname=None):
+        """
+        Partitions the document specified by filename and saves the resulting
+            elements as a JSON file with the name outputname.
+
+        Args:
+        - filename (str): The name of the document file to be partitioned.
+        - outputname (str): The name of the output JSON file. Default is None,
+            where the output is not saved to disk. 
+        
+        Returns:
+        - None
+        """
+        elements = self.parse_doc(filename)
+        if elements is None:
+            logger.error("Failed to partition document.")
+            return None
         element_dict = [el.to_dict() for el in elements]
-        with open(outputname, "w") as outfile:
-            json.dump(element_dict, outfile, indent=4)
-            logger.info(f"Output saved to {outputname}.")
+        if outputname is not None:
+            with open(outputname, "w") as outfile:
+                json.dump(element_dict, outfile, indent=4)
+                logger.info(f"Output saved to {outputname}.")
+        return element_dict
     
-    def run_dir(self, inputdir, outputdir):
+    def run_dir(self, inputdir, outputdir=None):
         """
         Partitions all the documents in the input directory and saves the resulting elements as JSON files in the output directory.
 
@@ -69,7 +85,9 @@ class DocumentPartition:
         doc_idx = 0
         for filename in os.listdir(inputdir):
             basename = os.path.basename(filename).split(".")[0]
-            outputname = os.path.join(outputdir, f"{basename}.json")
+            outputname = None
+            if outputdir is not None:
+                outputname = os.path.join(outputdir, f"{basename}.json")
             self.run(filename=os.path.join(inputdir, filename), outputname=outputname)
 
             logger.info(f"Partitioned document {doc_idx}: {filename}\n")
@@ -79,15 +97,15 @@ def main():
     t_start = time()
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", "-i", type=str, required=True,
-                        help="Your input file.")
+                        help="Your input file or folder.")
     parser.add_argument("--output", "-o", type=str, required=True,
-                        help="Your output file.")
+                        help="Your output file or folder.")
 
     args = parser.parse_args()
     dp = DocumentPartition()
     if os.path.isdir(args.input) and os.path.isdir(args.output):
         dp.run_dir(args.input, args.output)
-    elif os.path.isfile(args.input) and os.path.isfile(args.output):
+    elif os.path.isfile(args.input) and args.output.lower().endswith(".json"):
         dp.run(args.input, args.output)
     else:
         logger.error("Input and output must be either both directories or both files.")
