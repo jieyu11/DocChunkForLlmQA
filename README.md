@@ -1,12 +1,76 @@
-# Document Parsing and Prompting for LLM Question Answering
+# Document Parsing and Prompting for LLM Question Answering with Local Device
 
-The following system is designed to parse the given document and use them in the LLM 
-question answering phase. The parsed document is first converted into chunks of texts.
-The texts are then vectorized, while the embedding vectors are stored in the FAISS database.
-The vectorized 
-The summarized flow document chunking, prompting and LLM QA are presented in the following flow chart:
+## Introduction
+This system is designed to efficiently handle document parsing and utilization
+within the Question Answering phase of Large Language Models (LLMs). Here's a
+breakdown of the process:
+
+1. **Document Parsing**: The system parses the provided document, segmenting it
+into manageable portions.
+
+2. **Text Chunking**: The parsed document is further processed, breaking it down
+into discrete text chunks. These chunks are then prepared for vectorization.
+This step and the one above are achieved using the `unstructured` tool.
+
+3. **Vectorization**: Each text chunk undergoes vectorization, transforming it
+into an embedding vector. These vectors are stored within the FAISS (Facebook AI
+Similarity Search) database, facilitating rapid access during subsequent phases.
+
+4. **Prompting**: When prompted with a question or questions, the system
+utilizes the embeddings of the query to conduct a search within the vector
+database. The top-k closest matches are retrieved for further processing.
+
+5. **LLM Question Answering**: The retrieved matches serve as prompts for the
+LLM model, implemented through llama.cpp. The model utilizes these prompts to
+generate accurate answers.
+
+For a visual representation of the summarized flow of document chunking,
+prompting, and LLM Question Answering, refer to the following chart.
+
 
 ![Flow Diagram](images/flow_chart.png)
+
+### Use Cases
+
+The system is primarily tailored for on-premises deployment, keeping in mind the
+following use cases:
+
+* **Privacy Concerns**: In scenarios where privacy is vital, users may prefer
+not to upload sensitive documents to online servers. By operating locally, the
+system ensures the protection of such documents.
+
+* **Cost Efficiency**: Running the system locally eliminates any associated
+fees, making it a cost-effective solution.
+
+* **Educational Use**: The local deployment serves as an ideal environment for
+learning purposes. Users can leverage the system as a playground to delve into
+the intricacies of document chunking, text embedding algorithms, and various
+Large Language Models (LLMs).
+
+### Tools and Technologies Utilized
+
+This study incorporates the following tools and technologies:
+
+* **Docker**: Employed for containerization purposes, providing a consistent and
+portable environment.
+
+* **`unstructured`**: Utilized for text chunking operations. [Link to
+`unstructured`](https://github.com/Unstructured-IO/unstructured)
+
+* **FAISS**: Serves as the vector database, facilitating efficient storage and
+retrieval of embedding vectors.
+
+* **Langchain**: A framework which includes FAISS, ensuring
+integration and enhanced functionality.
+
+* **llama.cpp**: Responsible for serving the LLM, enabling effective question
+answering. [Link to `llama.cpp`](https://github.com/ggerganov/llama.cpp)
+
+* **TheBloke**: Quantized LLMs for efficient deployment. Accessible via
+[TheBloke on Hugging Face](https://huggingface.co/TheBloke)
+
+These tools and technologies collectively form the backbone of the study,
+enabling robust document parsing and prompt-based LLM question answering.
 
 
 ## Set Up
@@ -16,14 +80,21 @@ python3 -m venv .venv
 source .venv/bin/activate 
 ```
 
-## Build Private Network with Docker
-A private network is needed with more than one docker containers are running and
-one container needs to call the others through API requests. The following
-command is used to create a network called `my-network`.
+### Setting Up a Private Network Using Docker
+
+In this study, there are multiple Docker containers concurrently operational, where
+inter-container communication is established via API requests. The following commands are executed 
+to create a private network:
+
 ```bash
 docker network create my-network
 docker network ls
 ```
+
+The above commands initiate the creation of a network named `my-network`,
+enabling interaction among Docker containers within a secure and isolated
+environment.
+
 
 ## Chunking with Unstructured
 
