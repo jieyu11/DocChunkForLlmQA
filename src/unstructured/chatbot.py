@@ -7,7 +7,6 @@ from datetime import timedelta
 import os
 from vector_store import VectorStore
 
-
 logging.basicConfig(format="%(asctime)s %(levelname)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -30,11 +29,10 @@ class Chatbot:
         results = self.vs.search(query, self.retriever_key, top_k)
         prompt = f"You are a helpful assistant. You are given the following context:\n"
         for doc in results:
-            prompt += doc.page_content
-        prompt += f"\nYou are asked to answer the following question:\n{query}\n"
-        prompt += f"Your answer should be consice and accurate.\n"
+            prompt += doc.page_content + "\n"
+        prompt += f"You are asked to answer the following question:\n{query}\n"
+        prompt += f"Your answer should be verbose and accurate.\n"
         return prompt
-        
 
     def generate(self, query, n_predict=256, top_k=3):
         # data = {"prompt": "Building a website can be done in 10 simple steps:","n_predict": 128}
@@ -67,7 +65,9 @@ def main():
     for query in args.queries:
         logger.info(f"The query is: {query}")
         results = cb.generate(query)
-        logger.info(f"Results for {results}:")
+        logger.info(f"Results:")
+        for key, value in results.items():
+            logger.info(f"  {key}: {value}")
     tdif = time() - t_start
     logger.info("Time used: %s" % str(timedelta(seconds=tdif)))
 

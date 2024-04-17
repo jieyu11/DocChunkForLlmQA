@@ -95,16 +95,17 @@ The above commands initiate the creation of a network named `my-network`,
 enabling interaction among Docker containers within a secure and isolated
 environment.
 
+## Document Chunking with Unstructured
 
-## Chunking with Unstructured
+To execute document chunking using `unstructured`, refer to the steps below. The
+`unstructured` tool can be found on its [GitHub
+page](https://github.com/Unstructured-IO/unstructured).
 
-Following steps are used to run chunking with `unstructured`, which can be found in
-the [unstructured github page](https://github.com/Unstructured-IO/unstructured).
+### Step 1: Building a Docker Image for Unstructured
 
-### Step 1: Building A Docker Image for Unstructured
-
-Build a docker image with unstructured base image. Add necessary personal tools needed 
-for other functions needed. Do it for the only the first time:
+Initially, construct a Docker image with the base image of `unstructured`.
+Additionally, include any personal tools required for other functionalities.
+Execute the following commands for the first-time setup:
 
 ```bash
 docker pull downloads.unstructured.io/unstructured-io/unstructured:latest
@@ -112,17 +113,20 @@ cd docker
 source build_docker.sh
 ```
 
-After that, there should be `unstructured` in the repository list by running `docker images`.
+After completion, confirm the presence of `unstructured` in the repository list
+by running `docker images`.
 
-### Step 2: Build A Docker Container with Unstructured Image
+### Step 2: Building a Docker Container with Unstructured Image
 
-* Build a container by running the following script:
+* Generate a container using the provided script:
 
 ```bash
 source scripts/build_container.sh
 ```
 
-which has the following scripts:
+This script, as shown below, mounts `src/unstructured` to `src/` within the
+Docker container's working directory:
+
 ```bash
 workdir=/home/notebook-user
 docker run -dt --name myunstructured  \
@@ -132,53 +136,53 @@ docker run -dt --name myunstructured  \
     -v ${PWD}/input:${workdir}/input \
     unstructured:latest
 ```
-As it is shwn above, the `src/unstructured` is mounted to `src/.` in the docker
-conainer's working directory.
 
-Now doing `docker ps` should output a container named: `myunstructured`.
+Subsequently, verify the creation of a container named `myunstructured` by
+executing `docker ps`.
 
-### Step 3: Document Partioning
+### Step 3: Document Partitioning and Chunking
 
-* Execute docker for document partition:
+* Execute the Docker commands for document partitioning:
+
 ```bash
 docker exec -it myunstructured bash -c "python3 src/document_partition.py -i [INPUT] -o [OUTPUT]"
 ```
 
-Here, both `[INPUT]` and `[OUTPUT]` are either all directories or all files. In the case
-that they are directories, all the files in the input directory are looped and executed one
-by one. The basename of the file is used as the output file name.
+Here, `[INPUT]` and `[OUTPUT]` can be either directories or files. If
+directories are provided, all files within them will be processed individually,
+with the basename of each file used as the output filename.
 
-* Execute docker for document chunking:
+* Proceed with document chunking:
+
 ```bash
 docker exec -it myunstructured bash -c "python3 src/chunking.py -i [INPUT] -o [OUTPUT]"
 ```
 
-where, `[INPUT]` and `[OUTPUT]` are filenames.
+Replace `[INPUT]` and `[OUTPUT]` with appropriate filenames.
 
-### Step 4: Search Capability through FAISS
-The chunked text are converted to embedding vectors with `SentenceTransformer` model of
-`all-MiniLM-L6-v2`. The vectors are indexed and stored in the FAISS vector database through
-`Langchain`.
+### Step 4: Search Capability via FAISS
 
-The command to execute the docker container for document search:
+The chunked text undergoes conversion to embedding vectors using the
+`SentenceTransformer` model (`all-MiniLM-L6-v2`). These vectors are indexed and
+stored in the FAISS vector database via `Langchain`.
+
+Execute the Docker container for document search using the following command:
 
 ```bash
 docker exec -it myunstructured bash -c "python3 src/vector_store.py -i [INPUT] -q \"HERE IS THE QUESTION\""
 ```
 
-where, `[INPUT]` is the file name. It is then followed by the question using tag `-q`. The results
-are the list of text trunks, which are most relevant to the question.
-
+Substitute `[INPUT]` with the filename. The question follows using the `-q` tag.
+The resulting list presents text chunks most relevant to the question.
 
 ## RAG with Pretrained LLM
 
-### Step 1: Build a Docker Container with LLAMA.CPP
+### Step 1: Building a Docker Container with LLAMA.CPP
 
-Following the [llama.cpp github page](https://github.com/ggerganov/llama.cpp), 
-The docker image `ghcr.io/ggerganov/llama.cpp:server` is used to build the 
-docker container to searve the LLM models.
+Referencing the [llama.cpp GitHub page](https://github.com/ggerganov/llama.cpp),
+utilize the Docker image `ghcr.io/ggerganov/llama.cpp:server` to construct the
+container for serving LLM models. Employ the provided script:
 
-Here is the script for it.
 ```bash
 models_folder=${FOLDER_OF_LLM_MODEL}
 model_file=${LLM_MODEL_FILE}
@@ -192,38 +196,62 @@ docker run -dt \
     -c 512 --host 0.0.0.0 --port 8080
 ```
 
-For the `model_file`, I have tested with the models from: 
-[TheBloke](https://huggingface.co/TheBloke/LLaMa-7B-GGML),
-for example, `llama-2-7b-chat.Q2_K.gguf`.
+For `model_file`, models from [TheBloke](https://huggingface.co/TheBloke/LLaMa-7B-GGML) were tested, such as `llama-2-7b-chat.Q2_K.gguf`.
 
-### Step 2: Question Answer with RAG
-With `unstructed` for document chunking and vector searching, one can provide 
-a document and question 
+### Step 2: Question Answering with RAG
+
+With `unstructured` for document chunking and vector searching, input a document and questions using the command below:
 
 ```bash
 llamacpp_container_name=llamacpp_server
 docker exec -it myunstructured bash -c \
     "python3 src/chatbot.py -u http://${llamacpp_container_name}:8080/completion "`
-    `"-i input/pdfs/1207.7214.pdf -q \"What is the mass of the Higgs Boson? "`
+    `"-i INPUT_FILE_NAME -q \"HERE IS THE QUESTION\"" 
+```
+
+### Running Example
+As an example, the following code is executed:
+
+```bash
+llamacpp_container_name=llamacpp_server
+docker exec -it myunstructured bash -c \
+    "python3 src/chatbot.py -u http://${llamacpp_container_name}:8080/completion "`
+    `"-i input/1207.7214.pdf -q \"What is the mass of the Higgs Boson? "`
     `"Why is this discovery important?\"" 
 ```
 
-Where, `1207.7214.pdf` is the paper `Observation of a New Particle in the Search for the Standard`
-` Model Higgs Boson with the ATLAS Detector at the LHC` downloaded from `arxiv`. The questions
-are `What is the mass of the Higgs Boson? Why is this discovery important?`.
+Here, `1207.7214.pdf` is a paper downloaded from `arxiv`, titled `Observation of
+a New Particle in the Search for the Standard Model Higgs Boson with the ATLAS
+Detector at the LHC`. The questions provided are "What is the mass of the Higgs
+Boson?" and "Why is this discovery important?"
 
-The top 3 chunks that are found to be `closest` to the questions are:
+The top three chunks, identified as the most relevant to the questions, are:
 
 ```
 Higgs boson, more data are needed to assess its nature in detail.
 
-The Standard Model (SM) of particle physics [1–4] has been tested by many experiments over the last four decades and has been shown to successfully describe high energy particle interactions. However, the mecha- nism that breaks electroweak symmetry in the SM has not been veriﬁed experimentally. This mechanism [5– 10], which gives mass to massive elementary particles, implies the existence of a scalar particle, the SM Higgs boson. The search for the Higgs boson, the only ele- mentary particle in
 
-evidence the discovery of a new particle with mass for 126.0 signal ± strength parameter µ has the value 1.4 0.3 at the ﬁtted mass, which is consistent with the SM Higgs boson hypothesis µ = 1. The decays to pairs of vector bosons whose net electric charge is zero identify the new particle as a neutral boson. The observation in the diphoton channel disfavours the spin-1 hypothe- sis [140, 141]. Although these results are compatible with the hypothesis that the new particle is the Standard Model
+The Standard Model (SM) of particle physics [1–4] has been tested by many
+experiments over the last four decades and has been shown to successfully
+describe high energy particle interactions. However, the mecha- nism that breaks
+electroweak symmetry in the SM has not been veriﬁed experimentally. This
+mechanism [5– 10], which gives mass to massive elementary particles, implies the
+existence of a scalar particle, the SM Higgs boson. The search for the Higgs
+boson, the only ele- mentary particle in
+
+
+evidence the discovery of a new particle with mass for 126.0 signal ± strength
+parameter µ has the value 1.4 0.3 at the ﬁtted mass, which is consistent with
+the SM Higgs boson hypothesis µ = 1. The decays to pairs of vector bosons whose
+net electric charge is zero identify the new particle as a neutral boson. The
+observation in the diphoton channel disfavours the spin-1 hypothe- sis [140,
+141]. Although these results are compatible with the hypothesis that the new
+particle is the Standard Model
 ```
 
 
-The prompt is in the following:
+The prompt for the generated answer is:
+
 ```
 You are a helpful assistant. You are given the following context:
 
@@ -235,7 +263,23 @@ You are asked to answer the following question:
 Your answer should be verbose and accurate.
 ```
 
-The output is found below:
+
+The resulting answer:
+
 ```
-The Higgs Boson has a mass of approximately 125 GeV. The discovery of the Higgs Boson is important because it confirms the existence of the Higgs Field, a fundamental concept in the Standard Model of particle physics, which explains how particles acquire mass. The Standard Model of particle physics has been tested by many experiments over the last four decades and has been shown to successfully describe high energy particle interactions. However, the mechanism that breaks electroweak symmetry in the SM, which gives mass to massive elementary particles, has not been veriﬁed experimentally. The discovery of the Higgs Boson, the only ele- mentary particle inevidence the discovery of a new particle with mass for 126.0 signal ± strength parameter µ has the value 1.4 0.3 at the ﬁtted mass, which is consistent with the SM Higgs Boson. This discovery confirms the existence of the Higgs Field, a fundamental concept in the Standard Model of particle physics, which explains how particles acquire mass. This discovery has important implications for our understanding of the fundamental laws of physics and the nature of the universe.
+The Higgs Boson has a mass of approximately 125 GeV. The discovery of the Higgs
+Boson is important because it confirms the existence of the Higgs Field, a
+fundamental concept in the Standard Model of particle physics, which explains
+how particles acquire mass. The Standard Model of particle physics has been
+tested by many experiments over the last four decades and has been shown to
+successfully describe high energy particle interactions. However, the mechanism
+that breaks electroweak symmetry in the SM, which gives mass to massive
+elementary particles, has not been veriﬁed experimentally. The discovery of the
+Higgs Boson, the only ele- mentary particle inevidence the discovery of a new
+particle with mass for 126.0 signal ± strength parameter µ has the value 1.4 0.3
+at the ﬁtted mass, which is consistent with the SM Higgs Boson. This discovery
+confirms the existence of the Higgs Field, a fundamental concept in the Standard
+Model of particle physics, which explains how particles acquire mass. This
+discovery has important implications for our understanding of the fundamental
+laws of physics and the nature of the universe.
 ```

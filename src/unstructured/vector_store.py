@@ -34,19 +34,12 @@ class VectorStore:
         documents = list()
         for name in filenames:
             documents.extend(self.chunking.langchain_documents(name))
-        # vectorstore = Chroma.from_documents(documents, self.embeddings)
         vectorstore = FAISS.from_documents(documents, self.embeddings)
         logger.info(f"Number of indices in db: {vectorstore.index.ntotal}")
 
         self._stores[retriever_key] = vectorstore
         logger.info(f"Built vectorstore {retriever_key} with {len(documents)} documents")
 
-        # retriever = vectorstore.as_retriever(
-        #     search_type="similarity",
-        #     search_kwargs={"k": 5}
-        # )
-        # self.retrievers[retriever_key] = retriever
-        # logger.info(f"Built retriever {retriever_key} with {len(documents)} documents")
     def search(self, query: str, retriever_key, top_k=3) -> list[Document]:
         assert retriever_key in self._stores, f"Retriever {retriever_key} not found."
         retriever = self._stores[retriever_key]
